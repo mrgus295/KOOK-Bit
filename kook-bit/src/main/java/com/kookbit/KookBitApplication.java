@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.servers.Server;
+import io.swagger.v3.oas.annotations.servers.ServerVariable;
 
 @OpenAPIDefinition(servers = {@Server(url = "http://localhost:8888" , description = "KOOK Bit OpenAPI")})
 @SpringBootApplication

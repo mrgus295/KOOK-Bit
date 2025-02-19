@@ -27,6 +27,7 @@
 <link href="/dist/assets/vendor/quill/quill.bubble.css" rel="stylesheet">
 <link href="/dist/assets/vendor/remixicon/remixicon.css" rel="stylesheet">
 <link href="/dist/assets/vendor/simple-datatables/style.css" rel="stylesheet">
+<link href="/dist/assets/vendor/datatables/dataTables.css" rel="stylesheet">
 
 <!-- Template Main CSS File -->
 <link href="/dist/assets/css/style.css" rel="stylesheet">
