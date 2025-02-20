@@ -159,62 +159,29 @@
                 <div class="card-body">
                   <h5 class="card-title">Reports <span>/Today</span></h5>
 
-                  <!-- Line Chart -->
-                  <div id="reportsChart"></div>
-
-                  <script>
-                    document.addEventListener("DOMContentLoaded", () => {
-                      new ApexCharts(document.querySelector("#reportsChart"), {
-                        series: [{
-                          name: 'Sales',
-                          data: [31, 40, 28, 51, 42, 82, 56],
-                        }, {
-                          name: 'Revenue',
-                          data: [11, 32, 45, 32, 34, 52, 41]
-                        }, {
-                          name: 'Customers',
-                          data: [15, 11, 32, 18, 9, 24, 11]
-                        }],
-                        chart: {
-                          height: 350,
-                          type: 'area',
-                          toolbar: {
-                            show: false
-                          },
-                        },
-                        markers: {
-                          size: 4
-                        },
-                        colors: ['#4154f1', '#2eca6a', '#ff771d'],
-                        fill: {
-                          type: "gradient",
-                          gradient: {
-                            shadeIntensity: 1,
-                            opacityFrom: 0.3,
-                            opacityTo: 0.4,
-                            stops: [0, 90, 100]
-                          }
-                        },
-                        dataLabels: {
-                          enabled: false
-                        },
-                        stroke: {
-                          curve: 'smooth',
-                          width: 2
-                        },
-                        xaxis: {
-                          type: 'datetime',
-                          categories: ["2018-09-19T00:00:00.000Z", "2018-09-19T01:30:00.000Z", "2018-09-19T02:30:00.000Z", "2018-09-19T03:30:00.000Z", "2018-09-19T04:30:00.000Z", "2018-09-19T05:30:00.000Z", "2018-09-19T06:30:00.000Z"]
-                        },
-                        tooltip: {
-                          x: {
-                            format: 'dd/MM/yy HH:mm'
-                          },
-                        }
-                      }).render();
-                    });
-                  </script>
-                  <!-- End Line Chart -->
+                  <!-- Candle Stick Chart -->
+	              <div id="candleStickChart" class="echart" style="min-height: 400px;"></div>
+	
+	              <script>
+	                document.addEventListener("DOMContentLoaded", () => {
+	                  echarts.init(document.querySelector("#candleStickChart")).setOption({
+	                    xAxis: {
+	                      data: ['2017-10-24', '2017-10-25', '2017-10-26', '2017-10-27']
+	                    },
+	                    yAxis: {},
+	                    series: [{
+	                      type: 'candlestick',
+	                      data: [
+	                        [20, 34, 10, 38],
+	                        [40, 35, 30, 50],
+	                        [31, 38, 33, 44],
+	                        [38, 15, 5, 42]
+	                      ]
+	                    }]
+	                  });
+	                });
+	              </script>
+	              <!-- End Candle Stick Chart -->
 
                 </div>
 
@@ -277,18 +244,16 @@
   	var ws = null;
   	var UUID = `${UUID}`;
   	var marketTable;
+  	var defaultObj = {};
+  	defaultObj['type'] = 'KRW';
   	
   	$(document).ready(function(){
-		getCurrentInfo('KRW');
+		getCurrentInfo(defaultObj['type']);
 		
 		// socket 생성 및 메세지 전송
   		//ws = socket.init(format.socketUrl, 'KRW');
   		//ws = socket.customInit(format.customSocketUrl, 'KRW');
 		getCurrentPrice('KRW-BTC,KRW-ETH,KRW-USDT', 'Today');
-		
-// 		setInterval(function () {
-// 			marketTable.ajax.reload();
-// 		}, 1000);
 	});
   	
 	//실시간 통신용
@@ -330,16 +295,55 @@
 			// 현재가, 전일대비, 거래대금 수정
 			socket.onMessage(ws, (data) => {
 				appData = JSON.parse(data);
-				console.log(appData);
 				var acc_trade_price_24h = parseInt(appData.acc_trade_price_24h);
+				var trade_price = appData.trade_price;
+				trade_price = trade_price > 999 ? trade_price.toLocaleString('ko-KR', { maximumFractionDigits: 2 }) : trade_price;
+				var trade_priceHtml = '';
+				var signed_change_rate = appData.signed_change_rate;
+				var signed_change_rateHtml = '';
+				var signed_change_price = appData.signed_change_price;
+				signed_change_price = (appData.change_price > 999) ? signed_change_price.toLocaleString('ko-KR', { maximumFractionDigits: 2 }) : signed_change_price;
+				if(signed_change_rate > 0){
+					trade_priceHtml += '<span class="text-success pt-1 fw-bold">'+trade_price+'</span>';
+					signed_change_rateHtml += '<span class="text-success pt-1 fw-bold">';
+					signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+					signed_change_rateHtml += '</span>';
+					signed_change_rateHtml += '<br/>';
+					signed_change_rateHtml += '<span class="text-success small pt-1 fw-bold">';
+					signed_change_rateHtml += 	signed_change_price;
+					signed_change_rateHtml += '</span>';
+				}else if(signed_change_rate == 0){
+					trade_priceHtml += '<span class="small pt-1 fw-bold">'+trade_price+'</span>';
+					signed_change_rateHtml += '<span class="pt-1 fw-bold">';
+					signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+					signed_change_rateHtml += '</span>';
+					signed_change_rateHtml += '<br/>';
+					signed_change_rateHtml += '<span class="small pt-1 fw-bold">';
+					signed_change_rateHtml += 	signed_change_price;
+					signed_change_rateHtml += '</span>';
+				}else{
+					trade_priceHtml += '<span class="text-danger pt-1 fw-bold">'+trade_price+'</span>';
+					signed_change_rateHtml += '<span class="text-danger pt-1 fw-bold">';
+					signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+					signed_change_rateHtml += '</span>';
+					signed_change_rateHtml += '<br/>';
+					signed_change_rateHtml += '<span class="text-danger small pt-1 fw-bold">';
+					signed_change_rateHtml += 	signed_change_price;
+					signed_change_rateHtml += '</span>';
+				}
+				var korean_nameHtml = '';
+				korean_nameHtml += currentInfo[appData.code].market.korean_name;
+				korean_nameHtml += (currentInfo[appData.code].market.market_event.warning ? '<span class="badge bg-warning text-dark">주</span>':'');
+				korean_nameHtml += '<br/>('+appData.code.replace('-','/')+')';
 				var data = {
 					"id" : appData.code
-					,"한글명":	currentInfo[appData.code].market.korean_name+'<br/>('+appData.code.replace('-','/')+')'
-					, "현재가":	appData.trade_price.toLocaleString('ko-KR')
-					, "전일대비":	[(appData.signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 })+'%<br/>'+parseInt(appData.signed_change_price).toLocaleString('ko-KR', { maximumFractionDigits: 2 })]
-					, "거래대금":	 parseInt(acc_trade_price_24h.toString().slice(0,acc_trade_price_24h.toString().length-6)).toLocaleString('ko-KR', { maximumFractionDigits: 0 })+'백만'
-					, "trade_price":	 parseInt(acc_trade_price_24h.toString().slice(0,acc_trade_price_24h.toString().length-6))
-					, "signed_change_rate":	 appData.signed_change_rate
+					, "korean_name": korean_nameHtml
+					, "trade_priceHtml": trade_priceHtml
+					, "signed_change_rateHtml":	 signed_change_rateHtml
+					, "acc_trade_price_24hTxt":	 parseInt(acc_trade_price_24h.toString().slice(0,acc_trade_price_24h.toString().length-6)).toLocaleString('ko-KR', { maximumFractionDigits: 0 })+'백만'
+					, "acc_trade_price_24h": acc_trade_price_24h
+					, "signed_change_rate": appData.signed_change_rate
+					, "trade_price": trade_price
 				};
 				
 				// 대표 마켓 가격 변경
@@ -355,53 +359,23 @@
 		init: (url, type) => {
 			
 			const ws = new WebSocket(url);
-			
+			const resultFormat = 'SIMPLE';
 			socket.onOpen(ws, type, () => {
 				console.log(type, "WebSocket 연결됨");
-				socket.send(ws, format.ticker(UUID, market[type]));
+				socket.send(ws, format.ticker(UUID, market[type], resultFormat));
 			});
 			// 현재가, 전일대비, 거래대금 수정
 			socket.onMessage(ws, (data) => {
 				data.text().then(appData => {
 					appData = JSON.parse(appData);
-					console.log(appData);
-					var acc_trade_price_24h = parseInt(appData.acc_trade_price_24h);
-					var trade_price = appData.trade_price;
-					var trade_priceHtml = '';
-					var signed_change_rate = appData.signed_change_rate;
-					var signed_change_rateHtml = '';
-					
-					if(signed_change_rate > 0){
-						trade_priceHtml += '<span class="text-success small pt-1 fw-bold">'+trade_price.toLocaleString('ko-KR')+'</span>';
-						signed_change_rateHtml += '<span class="text-success small pt-1 fw-bold">';
-						signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 })+'%<br/>'+parseInt(appData.signed_change_price).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
-						signed_change_rateHtml += '</span>';
-					}else if(signed_change_rate == 0){
-						trade_priceHtml += '<span class="small pt-1 fw-bold">'+trade_price.toLocaleString('ko-KR')+'</span>';
-						signed_change_rateHtml += '<span class="small pt-1 fw-bold">';
-						signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 })+'%<br/>'+parseInt(appData.signed_change_price).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
-						signed_change_rateHtml += '</span>';
-					}else{
-						trade_priceHtml += '<span class="text-danger pt-1 fw-bold">'+trade_price.toLocaleString('ko-KR')+'</span>';
-						signed_change_rateHtml += '<span class="text-danger pt-1 fw-bold">';
-						signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 })+'%<br/>'+parseInt(appData.signed_change_price).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
-						signed_change_rateHtml += '</span>';
-					}
-					var data = {
-						"id" : appData.code
-						, "한글명": currentInfo[appData.code].market.korean_name+'<br/>('+appData.code.replace('-','/')+')'
-						, "현재가": trade_priceHtml
-						, "전일대비":	 signed_change_rateHtml
-						, "거래대금":	 parseInt(acc_trade_price_24h.toString().slice(0,acc_trade_price_24h.toString().length-6)).toLocaleString('ko-KR', { maximumFractionDigits: 0 })+'백만'
-						, "trade_price": parseInt(acc_trade_price_24h.toString().slice(0,acc_trade_price_24h.toString().length-6))
-						, "signed_change_rate": appData.signed_change_rate
-					};
-					
+					var data = resultFormat == 'SIMPLE'? format.simple(appData) : format.default(appData);
 					// 대표 마켓 가격 변경
-// 					if(appData.code.includes('KRW-BTC') || appData.code.includes('KRW-ETH') || appData.code.includes('KRW-USDT'))
-// 						drawTopMarketPrice(appData);
+					if(data.id == 'KRW-BTC' || data.id == 'KRW-ETH' || data.id == 'KRW-USDT'){
+						data['market'] = data.id;
+						drawTopMarketPrice(data);
+					}
 					
-			 		updateRowById(appData.code, data);
+			 		updateRowById(data.id, data);
 				});
 			});
 			socket.onClose(ws, () => console.log("WebSocket 연결 종료됨"));
@@ -412,8 +386,8 @@
 	
 	const format = {
 		socketUrl: 'wss://api.upbit.com/websocket/v1',
-		ticker: (UUID, marketArray) => {
-			return JSON.stringify([{"ticket":'KOOK-BIT-'+UUID},{"type":"ticker","codes":marketArray},{"format":"DEFAULT"}]);
+		ticker: (UUID, marketArray, format) => {
+				return JSON.stringify([{"ticket":'KOOK-BIT-'+UUID},{"type":"ticker","codes":marketArray, "is_only_realtime": true},{"format": format}]);
 		},
 		LIST_SUBSCRIPTIONS: (UUID) => {
 			return JSON.stringify([{"method": "LIST_SUBSCRIPTIONS"},{"ticket": 'KOOK-BIT-'+UUID}]);
@@ -421,6 +395,114 @@
 		customSocketUrl: 'ws://192.168.103.63:8888/ticker/KOOK-BIT-'+UUID,
 		customTicker: (UUID, type) => {
 			return JSON.stringify([{"ticket":'KOOK-BIT-'+UUID},{"type": type}]);
+		},
+		simple: (appData) => {
+			var acc_trade_price_24h = parseInt(appData.atp24h);
+			var trade_price = appData.tp;
+			trade_price = trade_price > 999 ? trade_price.toLocaleString('ko-KR', { maximumFractionDigits: 2 }) : trade_price;
+			var trade_priceHtml = '';
+			var signed_change_rate = appData.scr;
+			var signed_change_rateHtml = '';
+			var signed_change_price = appData.scp;
+			signed_change_price = (appData.cp > 999) ? signed_change_price.toLocaleString('ko-KR', { maximumFractionDigits: 2 }) : signed_change_price;
+			if(signed_change_rate > 0){
+				trade_priceHtml += '<span class="text-success pt-1 fw-bold">'+trade_price+'</span>';
+				signed_change_rateHtml += '<span class="text-success pt-1 fw-bold">';
+				signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+				signed_change_rateHtml += '</span>';
+				signed_change_rateHtml += '<br/>';
+				signed_change_rateHtml += '<span class="text-success small pt-1 fw-bold">';
+				signed_change_rateHtml += 	signed_change_price;
+				signed_change_rateHtml += '</span>';
+			}else if(signed_change_rate == 0){
+				trade_priceHtml += '<span class="small pt-1 fw-bold">'+trade_price+'</span>';
+				signed_change_rateHtml += '<span class="pt-1 fw-bold">';
+				signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+				signed_change_rateHtml += '</span>';
+				signed_change_rateHtml += '<br/>';
+				signed_change_rateHtml += '<span class="small pt-1 fw-bold">';
+				signed_change_rateHtml += 	signed_change_price;
+				signed_change_rateHtml += '</span>';
+			}else{
+				trade_priceHtml += '<span class="text-danger pt-1 fw-bold">'+trade_price+'</span>';
+				signed_change_rateHtml += '<span class="text-danger pt-1 fw-bold">';
+				signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+				signed_change_rateHtml += '</span>';
+				signed_change_rateHtml += '<br/>';
+				signed_change_rateHtml += '<span class="text-danger small pt-1 fw-bold">';
+				signed_change_rateHtml += 	signed_change_price;
+				signed_change_rateHtml += '</span>';
+			}
+			var korean_nameHtml = '';
+			korean_nameHtml += currentInfo[appData.cd].market.korean_name;
+			korean_nameHtml += (currentInfo[appData.cd].market.market_event.warning ? '<span class="badge bg-warning text-dark">주</span>':'');
+			korean_nameHtml += '<br/>('+appData.cd.replace('-','/')+')';
+			
+			var data = {
+				"id" : appData.cd
+				, "korean_name": korean_nameHtml
+				, "trade_priceHtml": trade_priceHtml
+				, "signed_change_rateHtml":	 signed_change_rateHtml
+				, "acc_trade_price_24hTxt":	 parseInt(acc_trade_price_24h.toString().slice(0,acc_trade_price_24h.toString().length-6)).toLocaleString('ko-KR', { maximumFractionDigits: 0 })+'백만'
+				, "acc_trade_price_24h": acc_trade_price_24h
+				, "signed_change_rate": appData.scr
+				, "trade_price": trade_price
+			};
+			return data;
+		},
+		default: (appData) => {
+			var acc_trade_price_24h = parseInt(appData.acc_trade_price_24h);
+			var trade_price = appData.trade_price;
+			trade_price = trade_price > 999 ? trade_price.toLocaleString('ko-KR', { maximumFractionDigits: 2 }) : trade_price;
+			var trade_priceHtml = '';
+			var signed_change_rate = appData.signed_change_rate;
+			var signed_change_rateHtml = '';
+			var signed_change_price = appData.signed_change_price;
+			signed_change_price = (appData.change_price > 999) ? signed_change_price.toLocaleString('ko-KR', { maximumFractionDigits: 2 }) : signed_change_price;
+			if(signed_change_rate > 0){
+				trade_priceHtml += '<span class="text-success pt-1 fw-bold">'+trade_price+'</span>';
+				signed_change_rateHtml += '<span class="text-success pt-1 fw-bold">';
+				signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+				signed_change_rateHtml += '</span>';
+				signed_change_rateHtml += '<br/>';
+				signed_change_rateHtml += '<span class="text-success small pt-1 fw-bold">';
+				signed_change_rateHtml += 	signed_change_price;
+				signed_change_rateHtml += '</span>';
+			}else if(signed_change_rate == 0){
+				trade_priceHtml += '<span class="small pt-1 fw-bold">'+trade_price+'</span>';
+				signed_change_rateHtml += '<span class="pt-1 fw-bold">';
+				signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+				signed_change_rateHtml += '</span>';
+				signed_change_rateHtml += '<br/>';
+				signed_change_rateHtml += '<span class="small pt-1 fw-bold">';
+				signed_change_rateHtml += 	signed_change_price;
+				signed_change_rateHtml += '</span>';
+			}else{
+				trade_priceHtml += '<span class="text-danger pt-1 fw-bold">'+trade_price+'</span>';
+				signed_change_rateHtml += '<span class="text-danger pt-1 fw-bold">';
+				signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+				signed_change_rateHtml += '</span>';
+				signed_change_rateHtml += '<br/>';
+				signed_change_rateHtml += '<span class="text-danger small pt-1 fw-bold">';
+				signed_change_rateHtml += 	signed_change_price;
+				signed_change_rateHtml += '</span>';
+			}
+			var korean_nameHtml = '';
+			korean_nameHtml += currentInfo[appData.code].market.korean_name;
+			korean_nameHtml += (currentInfo[appData.code].market.market_event.warning ? '<span class="badge bg-warning text-dark">주</span>':'');
+			korean_nameHtml += '<br/>('+appData.code.replace('-','/')+')';
+			
+			var data = {
+				"id" : appData.code
+				, "korean_name": korean_nameHtml
+				, "trade_priceHtml": trade_priceHtml
+				, "signed_change_rateHtml":	 signed_change_rateHtml
+				, "acc_trade_price_24hTxt":	 parseInt(acc_trade_price_24h.toString().slice(0,acc_trade_price_24h.toString().length-6)).toLocaleString('ko-KR', { maximumFractionDigits: 0 })+'백만'
+				, "acc_trade_price_24h": acc_trade_price_24h
+				, "signed_change_rate": appData.signed_change_rate
+				, "trade_price": appData.trade_price
+			};
+			return data;
 		}
 	}
 	
@@ -442,6 +524,7 @@
 //   			socket.close(ws);
 //   			ws = socket.init(format.socketUrl, type);
 //   		}
+		defaultObj['type'] = type;
   		getMarket(currentInfo);
   		getTicker(currentInfo, type);
   		drawCurrentMarketList(currentInfo, type, market);
@@ -510,75 +593,77 @@
 		$(market[type]).each(function(idx, name){
 			var acc_trade_price_24h = parseInt(currentInfo[name].ticker.acc_trade_price_24h);
 			var trade_price = currentInfo[name].ticker.trade_price;
+			trade_price = trade_price > 999 ? trade_price.toLocaleString('ko-KR', { maximumFractionDigits: 2 }) : trade_price;
 			var trade_priceHtml = '';
 			var signed_change_rate = currentInfo[name].ticker.signed_change_rate;
 			var signed_change_rateHtml = '';
-			
+			var signed_change_price = currentInfo[name].ticker.signed_change_price;
+			signed_change_price = (currentInfo[name].ticker.change_price > 999) ? signed_change_price.toLocaleString('ko-KR', { maximumFractionDigits: 2 }) : signed_change_price;
 			if(signed_change_rate > 0){
-				trade_priceHtml += '<span class="text-success small pt-1 fw-bold">'+trade_price.toLocaleString('ko-KR')+'</span>';
+				trade_priceHtml += '<span class="text-success pt-1 fw-bold">'+trade_price+'</span>';
+				signed_change_rateHtml += '<span class="text-success pt-1 fw-bold">';
+				signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+				signed_change_rateHtml += '</span>';
+				signed_change_rateHtml += '<br/>';
 				signed_change_rateHtml += '<span class="text-success small pt-1 fw-bold">';
-				signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 })+'%<br/>'+parseInt(currentInfo[name].ticker.signed_change_price).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+				signed_change_rateHtml += 	signed_change_price;
 				signed_change_rateHtml += '</span>';
 			}else if(signed_change_rate == 0){
-				trade_priceHtml += '<span class="small pt-1 fw-bold">'+trade_price.toLocaleString('ko-KR')+'</span>';
+				trade_priceHtml += '<span class="small pt-1 fw-bold">'+trade_price+'</span>';
+				signed_change_rateHtml += '<span class="pt-1 fw-bold">';
+				signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+				signed_change_rateHtml += '</span>';
+				signed_change_rateHtml += '<br/>';
 				signed_change_rateHtml += '<span class="small pt-1 fw-bold">';
-				signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 })+'%<br/>'+parseInt(currentInfo[name].ticker.signed_change_price).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+				signed_change_rateHtml += 	signed_change_price;
 				signed_change_rateHtml += '</span>';
 			}else{
-				trade_priceHtml += '<span class="text-danger pt-1 fw-bold">'+trade_price.toLocaleString('ko-KR')+'</span>';
+				trade_priceHtml += '<span class="text-danger pt-1 fw-bold">'+trade_price+'</span>';
 				signed_change_rateHtml += '<span class="text-danger pt-1 fw-bold">';
-				signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 })+'%<br/>'+parseInt(currentInfo[name].ticker.signed_change_price).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+				signed_change_rateHtml += 	(signed_change_rate * 100).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+				signed_change_rateHtml += '</span>';
+				signed_change_rateHtml += '<br/>';
+				signed_change_rateHtml += '<span class="text-danger small pt-1 fw-bold">';
+				signed_change_rateHtml += 	signed_change_price;
 				signed_change_rateHtml += '</span>';
 			}
-				
+			if(Object.values(currentInfo[name].market.market_event.caution).filter(t=>{if(t) return t}).length > 0);
+			
+			var korean_nameHtml = '';
+			korean_nameHtml += currentInfo[name].market.korean_name;
+			korean_nameHtml += (Object.values(currentInfo[name].market.market_event.caution).filter(t=>{if(t) return t}).length > 0 ? '<span class="badge bg-warning text-dark">주</span>':'');
+			korean_nameHtml += '<br/>('+name.replace('-','/')+')';
 			var data = {
 				"id" : name
-				,"한글명":	currentInfo[name].market.korean_name+'<br/>('+name.replace('-','/')+')'
-				, "현재가":	trade_priceHtml
-				, "전일대비": signed_change_rateHtml
-				, "거래대금":	 parseInt(acc_trade_price_24h.toString().slice(0,acc_trade_price_24h.toString().length-6)).toLocaleString('ko-KR', { maximumFractionDigits: 0 })+'백만'
-				, "trade_price":	 parseInt(acc_trade_price_24h.toString().slice(0,acc_trade_price_24h.toString().length-6))
+				,"korean_name":	korean_nameHtml
+				, "trade_priceHtml":	trade_priceHtml
+				, "signed_change_rateHtml": signed_change_rateHtml
+				, "acc_trade_price_24hTxt":	 parseInt(acc_trade_price_24h.toString().slice(0,acc_trade_price_24h.toString().length-6)).toLocaleString('ko-KR', { maximumFractionDigits: 0 })+'백만'
+				, "acc_trade_price_24h":	 parseInt(acc_trade_price_24h.toString().slice(0,acc_trade_price_24h.toString().length-6))
 				, "signed_change_rate": signed_change_rate
+				, "trade_price": trade_price
 			};
 			marketArray.push(data);
 		});
-		console.log(marketArray);
+		
 		marketTable = new DataTable('#market-table', {
-// 			ajax: {
-// 				type: "GET",
-// 				url: "/api/ticker/"+type,
-// 				dataType : 'json',
-// 				contentType: "application/json",
-// 				data: {},
-// 				async: false,
-// 				success : function (obj) {
-// 					if(obj.header.code == 200){
-// 						$(JSON.parse(obj.data)).each(function(idx, item) {
-// 							currentInfo[item.market]['ticker'] = item;
-// 						});
-// 					}
-// 					else console.error(obj.header.message);
-// 				},
-// 				beforeSend: function(){},
-// 				complete: function(){},
-// 				error : function(request, status, error) {}
-// 			}, 
 		    data: marketArray
 		    , columns: [
-		    	{data: '한글명', title: '한글명', /* name: '한글명', */ orderable: true, searchable: true}
-		    	, {data: '현재가', title: '현재가', name: '현재가', orderable: true, searchable: false}
-		    	, {data: '전일대비', title: '전일대비', name: '전일대비', orderable: true, searchable: false}
-		    	, {data: '거래대금', title: '거래대금', name: '거래대금', orderable: true, searchable: false}
-		    	, {data: 'trade_price', title: 'trade_price', name: 'trade_price', visible: false, searchable: false}
+		    	{data: 'korean_name', title: '한글명', name: '한글명', orderable: true, searchable: true}
+		    	, {data: 'trade_priceHtml', title: '현재가', name: '현재가', orderable: true, searchable: false}
+		    	, {data: 'signed_change_rateHtml', title: '전일대비', name: '전일대비', orderable: true, searchable: false}
+		    	, {data: 'acc_trade_price_24hTxt', title: '거래대금', name: '거래대금', orderable: true, searchable: false}
+		    	, {data: 'acc_trade_price_24h', title: 'acc_trade_price_24h', name: 'acc_trade_price_24h', visible: false, searchable: false}
 		    	, {data: 'signed_change_rate', title: 'signed_change_rate', name: 'signed_change_rate', visible: false, searchable: false} 
 		    	, {data: 'id', title: 'id', name: 'id', visible: false, searchable: false}
+		    	, {data: 'trade_price', title: 'trade_price', name: 'trade_price', visible: false, searchable: false}
 		    ]
 			, columnDefs: [{
-	            targets: 3, // 거래대금 컬럼 인덱스 (0부터 시작)
-	            orderData: [4] // trade_price(인덱스 4) 값으로 정렬
+	            targets: 3, // 거래대금 컬럼 인덱스
+	            orderData: [4] // trade_price 값으로 정렬
 	        },{
-	            targets: 2, // 거래대금 컬럼 인덱스 (0부터 시작)
-	            orderData: [5] // trade_price(인덱스 4) 값으로 정렬
+	            targets: 2, // 전일대비 컬럼 인덱스
+	            orderData: [5] // signed_change_rate 값으로 정렬
         	}]
 			, fixedWidth: true
 			, paging : false
@@ -630,16 +715,26 @@
   	
  	// 대표 마켓 UI생성
   	function drawTopMarketPriceList(list, range){
- 		console.log(list);
   		$(list).each(function(idx, item){
-  			drawTopMarketPrice(item);
+  			var acc_trade_price_24h = parseInt(item.acc_trade_price_24h);
+			var trade_price = item.trade_price;
+			trade_price = trade_price > 999 ? trade_price.toLocaleString('ko-KR', { maximumFractionDigits: 2 }) : trade_price;
+			var signed_change_rate = item.signed_change_rate;
+			var signed_change_price = item.signed_change_price;
+  			var data = {
+				"market" : item.market
+				, "acc_trade_price_24h":	 parseInt(acc_trade_price_24h.toString().slice(0,acc_trade_price_24h.toString().length-6))
+				, "signed_change_rate": signed_change_rate
+				, "trade_price": trade_price
+ 			};
+  			drawTopMarketPrice(data);
   		});
   	}
  	
   	function drawTopMarketPrice(item){
   		var name = item.market.split('-')[1];
 		$('#'+name+'-type').text('| KRW');
-		$('#'+name+'-price').text('￦ '+parseInt(item.trade_price).toLocaleString('ko-KR', { maximumFractionDigits: 2 }));
+		$('#'+name+'-price').text('￦ '+item.trade_price);
 		if(item.signed_change_price > 0){	// +
 			$('#'+name+'-rate').removeClass('text-success');
 			$('#'+name+'-rate').removeClass('text-danger');

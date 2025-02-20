@@ -2,3 +2,4 @@
 
 <script src="/js/jquery-3.6.0.min.js"></script>
 <script src="/js/dataTables.js"></script>
+<script src="/dist/assets/vendor/echarts/echarts.min.js"></script>
